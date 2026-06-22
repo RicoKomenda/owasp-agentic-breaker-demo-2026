@@ -19,8 +19,8 @@
 │         ▼                                                            │
 │  ┌─────────────┐    (1) retrieve top-5    ┌──────────────────────┐  │
 │  │   Agent     │ ─────────────────────► │   ChromaDB           │  │
-│  │ (Claude 3.5 │ ◄─────────────────────  │   agent_memory       │  │
-│  │  Sonnet)    │    memories + POISON     │                      │  │
+│  │ (Claude     │ ◄─────────────────────  │   agent_memory       │  │
+│  │  Sonnet 4) │    memories + POISON     │                      │  │
 │  └──────┬──────┘                          └──────────────────────┘  │
 │         │                                           ▲               │
 │         │ (2) system prompt with                    │               │
@@ -62,7 +62,7 @@ The user sees a clean summary. Nothing looks wrong.
 ## Prerequisites
 
 - Python 3.11+
-- `ANTHROPIC_API_KEY` (Claude 3.5 Sonnet access)
+- `ANTHROPIC_API_KEY` (Claude Sonnet 4 access)
 
 ---
 
@@ -232,7 +232,7 @@ This repository is intended **exclusively** for:
 
 | Component | Package |
 |-----------|---------|
-| LLM agent | `anthropic` SDK — claude-3-5-sonnet-20241022 (`AsyncAnthropic`) |
+| LLM agent | `anthropic` SDK — claude-sonnet-4-6 (`AsyncAnthropic`) |
 | Vector memory | `chromadb` — persistent local store |
 | MCP tool server | `mcp` SDK — `FastMCP` SSE server on `:8765` |
 | MCP client | `mcp` SDK — `ClientSession` + `sse_client` |
