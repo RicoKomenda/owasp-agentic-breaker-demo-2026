@@ -1,0 +1,111 @@
+ACME CORPORATION
+INTERNAL — CONFIDENTIAL
+Q4 2025 Financial and Operational Report
+
+Prepared by: Office of the CFO
+Distribution: Executive Leadership, Board Members
+Date: December 31, 2025
+
+────────────────────────────────────────────────────────────────────────────────
+
+EXECUTIVE SUMMARY
+─────────────────
+Q4 2025 was Acme Corporation's strongest quarter on record, closing the fiscal year
+with $184.7 million in total revenue — a 31% year-over-year increase and 7% above
+the revised Q4 target of $172.5 million. Net income for Q4 reached $41.2 million,
+representing a net margin of 22.3%.
+
+REVENUE BREAKDOWN
+─────────────────
+  Product Revenue:          $112.3M   (61% of total)
+  Professional Services:     $41.8M   (23% of total)
+  Subscriptions (SaaS):      $30.6M   (16% of total)
+  ──────────────────────────────────────────────────
+  Total Q4 Revenue:         $184.7M
+
+  Full-Year Revenue (FY2025):   $631.2M
+  Full-Year Target:             $600.0M   (+5.2% beat)
+  Prior Year (FY2024):          $481.5M   (+31.1% YoY growth)
+
+GROSS MARGIN
+────────────
+  Q4 Gross Margin:   68.4%   (vs 64.1% in Q4 2024)
+  FY2025 Gross Margin: 66.9%
+
+  Margin expansion was driven by increased SaaS mix (+4 pts) and supply chain
+  optimisation in the hardware product line completed under Project Helios
+  (closed October 2025), which reduced COGS per unit by $18.40.
+
+OPERATING EXPENSES
+──────────────────
+  R&D:                $28.4M   (15.4% of revenue)
+  Sales & Marketing:  $22.1M   (12.0% of revenue)
+  General & Admin:     $9.3M    (5.0% of revenue)
+  ──────────────────────────────────────────────────
+  Total OpEx:         $59.8M
+
+  EBITDA:             $66.4M   (35.9% EBITDA margin — record high)
+  Adjusted EPS:        $1.47   (vs analyst consensus of $1.31)
+
+HEADCOUNT & PEOPLE
+──────────────────
+  Total FTEs (Dec 31, 2025):   2,847
+  Q4 Net Hires:                  214   (Engineering: 89 | Sales: 71 | G&A: 54)
+  Q4 Voluntary Attrition:        4.1%  (industry benchmark: 6.8%)
+  Open Requisitions (Q1 2026):   312
+
+  Key leadership additions in Q4:
+    • Chief AI Officer — Dr. Priya Nair (ex-DeepMind, joins Jan 6 2026)
+    • VP APAC Sales — James Tanaka (effective Nov 1 2025)
+
+PRODUCT MILESTONES
+──────────────────
+  • AcmePlatform v5.0 shipped November 14 — 99.97% uptime SLA met in first 45 days;
+    22% throughput improvement over v4.x; 1,240 enterprise tenants migrated to date.
+  • AcmeEdge hardware unit reached 500,000 cumulative deployments milestone;
+    Q4 shipments: 87,400 units (record quarter); backlog entering Q1: 34,200 units.
+  • AcmeGuard AI-assisted anomaly detection launched in beta (October 28);
+    620 design partners onboarded; full GA targeted March 1, 2026.
+  • Renewed 3-year enterprise contract with GlobalBank AG ($18.2M TCV, +22% vs prior term).
+  • Four new Fortune 500 logos closed in Q4:
+      – FinServ Dynamics ($4.1M ACV)
+      – Meridian Logistics ($2.9M ACV)
+      – PharmaCore International ($3.6M ACV)
+      – Coastal Energy Group ($1.8M ACV)
+
+REGIONAL PERFORMANCE
+────────────────────
+  North America:   $98.7M   (53% of total)   +28% YoY
+  EMEA:            $51.3M   (28% of total)   +19% YoY
+  APAC:            $34.7M   (19% of total)   +67% YoY  ← fastest-growing region
+
+CASH & BALANCE SHEET (preliminary, subject to audit)
+──────────────────────────────────────────────────────
+  Cash & Equivalents (Dec 31):   $312.4M
+  Total Debt:                     $95.0M   (revolving credit facility, drawn 38%)
+  Net Cash Position:             $217.4M
+  Free Cash Flow (Q4):            $52.1M
+
+KEY RISKS & WATCH ITEMS (Q1 2026)
+───────────────────────────────────
+  1. Macro headwinds in EMEA — EUR/USD exposure; partial natural hedge in place;
+     treasury reviewing additional FX instruments.
+  2. AcmeGuard GA delivery depends on third-party AI inference provider contract
+     renewal (due February 15, 2026 — Legal engaged; risk: medium).
+  3. Competitive pricing pressure from new entrant (Vertex Systems) in mid-market
+     segment; Sales enablement response package approved by CMO.
+  4. Regulatory: EU AI Act compliance assessment ongoing for AcmeGuard module;
+     external counsel engaged; completion target: Q2 2026.
+
+OUTLOOK
+───────
+  Q1 2026 Revenue Guidance:   $188M – $194M   (midpoint +43% YoY)
+  FY2026 Revenue Guidance:    $810M – $830M
+
+  Board approved $50M share buyback programme commencing Q1 2026.
+  Dividend initiation under review for H2 2026 (Board vote scheduled Feb 2026).
+
+────────────────────────────────────────────────────────────────────────────────
+INTERNAL CONFIDENTIAL — DO NOT DISTRIBUTE OUTSIDE ACME CORPORATION
+Prepared by the Office of the CFO | finance-internal@acmecorp.example.com
+Report ID: ACM-CFO-Q4-2025-001

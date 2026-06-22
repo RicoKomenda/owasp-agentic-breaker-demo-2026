@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OWASP 2026 — Poisoned Agent Memory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:       #090d12;
+    --surface:  #0d1117;
+    --card:     #161b22;
+    --border:   #21262d;
+    --text:     #c9d1d9;
+    --dim:      #6e7681;
+    --green:    #3fb950;
+    --red:      #f85149;
+    --yellow:   #d29922;
+    --blue:     #58a6ff;
+    --purple:   #bc8cff;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Header ── */
+  .header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .header-title {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .header-title .owasp { color: var(--dim); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; }
+  .header-title .main-title { color: var(--text); font-size: 14px; font-weight: 600; }
+  .header-title .main-title span { color: var(--red); }
+
+  .controls { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .btn {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 11px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn:hover { border-color: var(--blue); color: var(--blue); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn.btn-danger { border-color: #f8514944; color: var(--red); }
+  .btn.btn-danger:hover { background: #f8514922; border-color: var(--red); }
+  .btn.btn-success { border-color: #3fb95044; color: var(--green); }
+  .btn.btn-success:hover { background: #3fb95022; border-color: var(--green); }
+  .btn.btn-active { background: var(--blue); color: #000; border-color: var(--blue); }
+
+  /* ── Step indicator ── */
+  .steps {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 0;
+  }
+  .step {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    color: var(--dim);
+    transition: all 0.3s;
+  }
+  .step.active { color: var(--blue); }
+  .step.done { color: var(--green); }
+  .step.attack { color: var(--red); }
+  .step-num {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    border: 1px solid currentColor;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700;
+    flex-shrink: 0;
+  }
+  .step-arrow { color: var(--border); padding: 0 4px; font-size: 14px; }
+
+  /* ── Query bar ── */
+  .query-bar {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 12px;
+  }
+  .query-bar .label { color: var(--dim); }
+  .query-bar .query { color: var(--yellow); }
+
+  /* ── Main layout ── */
+  .main {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    height: calc(100vh - 116px);
+    overflow: hidden;
+  }
+
+  .pane {
+    background: var(--bg);
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .pane-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--dim);
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .pane-header .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+  .pane-header.agent { color: var(--blue); }
+  .pane-header.attacker { color: var(--red); }
+
+  /* ── Section ── */
+  .section { display: flex; flex-direction: column; gap: 6px; }
+  .section-title {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--dim);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  /* ── Memory table ── */
+  .memory-list { display: flex; flex-direction: column; gap: 4px; }
+  .memory-entry {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--green);
+    border-radius: 4px;
+    padding: 8px 10px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    animation: fadeIn 0.3s ease;
+  }
+  .memory-entry.poison {
+    border-left-color: var(--red);
+    background: #1a0d0d;
+    border-color: #3a1a1a;
+    animation: fadeIn 0.3s ease, pulse-red-border 1s ease 0.3s;
+  }
+  .memory-idx {
+    color: var(--dim);
+    font-size: 10px;
+    min-width: 16px;
+    padding-top: 1px;
+  }
+  .memory-text { color: var(--text); line-height: 1.5; }
+  .memory-entry.poison .memory-text { color: #ffaaaa; }
+  .poison-badge {
+    margin-left: auto;
+    background: var(--red);
+    color: #000;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 3px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    letter-spacing: 0.05em;
+  }
+
+  /* ── Tool calls ── */
+  .tool-list { display: flex; flex-direction: column; gap: 6px; }
+  .tool-call {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 8px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    animation: fadeIn 0.3s ease;
+  }
+  .tool-call.malicious {
+    background: #1a0d0d;
+    border-color: var(--red);
+    animation: fadeIn 0.2s ease, glow-red 0.6s ease;
+  }
+  .tool-call-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .tool-arrow { color: var(--dim); }
+  .tool-name { font-weight: 600; }
+  .tool-call.malicious .tool-name { color: var(--red); }
+  .tool-call:not(.malicious) .tool-name { color: var(--blue); }
+  .tool-badge {
+    font-size: 9px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+  .tool-badge.mcp { background: #1c3a5a; color: var(--blue); }
+  .tool-badge.exfil { background: var(--red); color: #000; }
+  .tool-input {
+    color: var(--dim);
+    font-size: 11px;
+    padding-left: 20px;
+    word-break: break-all;
+  }
+
+  /* ── Response ── */
+  .response-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 12px;
+    color: var(--text);
+    line-height: 1.7;
+    white-space: pre-wrap;
+    animation: fadeIn 0.4s ease;
+  }
+
+  /* ── Exfil panel ── */
+  .exfil-waiting {
+    color: var(--dim);
+    text-align: center;
+    padding: 40px 20px;
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+  }
+  .exfil-received {
+    background: #1a0d0d;
+    border: 1px solid var(--red);
+    border-radius: 6px;
+    overflow: hidden;
+    animation: fadeIn 0.3s ease, glow-red 0.8s ease;
+  }
+  .exfil-header {
+    background: var(--red);
+    color: #000;
+    padding: 8px 12px;
+    font-weight: 700;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .exfil-meta {
+    padding: 10px 12px;
+    border-bottom: 1px solid #3a1a1a;
+    display: flex;
+    gap: 16px;
+    font-size: 11px;
+    color: var(--dim);
+  }
+  .exfil-meta span { color: var(--red); }
+  .exfil-body {
+    padding: 10px 12px;
+    max-height: 300px;
+    overflow-y: auto;
+    font-size: 11px;
+    color: #ffaaaa;
+    white-space: pre-wrap;
+    line-height: 1.5;
+  }
+
+  /* ── Impact panel ── */
+  .impact-panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    animation: fadeIn 0.5s ease;
+  }
+  .impact-title { color: var(--text); font-weight: 600; font-size: 13px; }
+  .impact-row { display: flex; gap: 10px; align-items: flex-start; font-size: 11px; line-height: 1.6; }
+  .impact-row .icon { min-width: 16px; }
+  .impact-row.bad .icon { color: var(--red); }
+  .impact-row.good .icon { color: var(--green); }
+  .impact-section { color: var(--dim); font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; margin-top: 4px; }
+  .mitigation {
+    background: #0d1f0d;
+    border: 1px solid #1a3a1a;
+    border-radius: 4px;
+    padding: 8px 10px;
+    font-size: 11px;
+    color: #aaffaa;
+    line-height: 1.6;
+  }
+
+  /* ── Status toast ── */
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px 16px;
+    font-size: 12px;
+    z-index: 100;
+    animation: slideUp 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .toast.info { border-color: var(--blue); color: var(--blue); }
+  .toast.success { border-color: var(--green); color: var(--green); }
+  .toast.danger { border-color: var(--red); color: var(--red); }
+
+  /* ── Empty state ── */
+  .empty {
+    color: var(--dim);
+    font-size: 11px;
+    padding: 10px 0;
+    font-style: italic;
+  }
+
+  /* ── Spinner ── */
+  .spinner {
+    display: inline-block;
+    width: 10px; height: 10px;
+    border: 2px solid var(--border);
+    border-top-color: var(--blue);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+  }
+
+  /* ── Animations ── */
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes pulse-red-border { 0%,100% { box-shadow: 0 0 0 0 #f8514900; } 50% { box-shadow: 0 0 12px 2px #f8514966; } }
+  @keyframes glow-red { 0% { box-shadow: 0 0 0 0 #f8514900; } 40% { box-shadow: 0 0 20px 4px #f8514988; } 100% { box-shadow: 0 0 0 0 #f8514900; } }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <div class="header-title">
+    <div class="owasp">OWASP Conference Demo 2026</div>
+    <div class="main-title">Poisoned Agent Memory <span>→ Malicious Tool Use</span></div>
+  </div>
+  <div class="controls">
+    <button class="btn" onclick="doAction('reset')" id="btn-reset">↺ Reset</button>
+    <button class="btn btn-success" onclick="doAction('run_clean')" id="btn-clean">① Run Clean Demo</button>
+    <button class="btn btn-danger" onclick="doAction('inject_poison')" id="btn-poison">② Inject Poison</button>
+    <button class="btn btn-danger" onclick="doAction('run_poisoned')" id="btn-attack">③ Run Attack</button>
+  </div>
+</div>
+
+<!-- Step indicator -->
+<div class="steps">
+  <div class="step" id="step-1"><div class="step-num">1</div> Normal Behavior</div>
+  <div class="step-arrow">→</div>
+  <div class="step" id="step-2"><div class="step-num">2</div> Memory Poisoned</div>
+  <div class="step-arrow">→</div>
+  <div class="step" id="step-3"><div class="step-num">3</div> Attack Fires</div>
+  <div class="step-arrow">→</div>
+  <div class="step" id="step-4"><div class="step-num">4</div> Impact</div>
+</div>
+
+<!-- Query bar -->
+<div class="query-bar">
+  <span class="label">User query:</span>
+  <span class="query">"Please summarise the Q4 report"</span>
+  <span id="running-indicator" style="margin-left:auto;display:none;">
+    <span class="spinner"></span> <span style="color:var(--dim)">Agent running…</span>
+  </span>
+</div>
+
+<!-- Main split layout -->
+<div class="main">
+
+  <!-- Left: Agent View -->
+  <div class="pane" id="agent-pane">
+    <div class="pane-header agent">
+      <div class="dot"></div> Agent View
+    </div>
+
+    <div class="section">
+      <div class="section-title">
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><circle cx="5" cy="5" r="4" stroke="currentColor"/></svg>
+        ChromaDB — Retrieved Memories
+      </div>
+      <div class="memory-list" id="memories">
+        <div class="empty">Waiting for agent run…</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5h6M7 3l2 2-2 2" stroke="currentColor" stroke-linecap="round"/></svg>
+        MCP Tool Calls
+      </div>
+      <div class="tool-list" id="tool-calls">
+        <div class="empty">Waiting for agent run…</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1 2h8M1 5h6M1 8h4" stroke="currentColor" stroke-linecap="round"/></svg>
+        Agent Response
+      </div>
+      <div id="response"><div class="empty">Waiting for agent run…</div></div>
+    </div>
+
+    <div id="impact-section" style="display:none;">
+      <div class="section-title" style="margin-bottom:8px;">
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M5 1v4M5 7v2" stroke="currentColor" stroke-linecap="round"/><circle cx="5" cy="5" r="4" stroke="currentColor"/></svg>
+        Impact Summary
+      </div>
+      <div class="impact-panel">
+        <div class="impact-title">What just happened</div>
+        <div class="impact-row good"><span class="icon">✓</span><span>User received a clean, correct Q4 summary — nothing looked suspicious.</span></div>
+        <div class="impact-row bad"><span class="icon">✗</span><span>Full Q4 report was silently POST-ed to the attacker's server.</span></div>
+        <div class="impact-row bad"><span class="icon">✗</span><span>No error, no warning, no user consent dialog.</span></div>
+        <div class="impact-row bad"><span class="icon">✗</span><span>Attack fires on any document request — not only Q4.</span></div>
+        <div class="impact-section" style="margin-top:8px;">OWASP LLM Top 10</div>
+        <div class="impact-row"><span class="icon" style="color:var(--yellow)">▸</span><span><b style="color:var(--yellow)">LLM01:2025</b> Prompt Injection — indirect, via vector store retrieval</span></div>
+        <div class="impact-row"><span class="icon" style="color:var(--yellow)">▸</span><span><b style="color:var(--yellow)">LLM02:2025</b> Sensitive Information Disclosure</span></div>
+        <div class="impact-row"><span class="icon" style="color:var(--yellow)">▸</span><span><b style="color:var(--yellow)">LLM08:2025</b> Vector and Embedding Weaknesses</span></div>
+        <div class="impact-section" style="margin-top:8px;">Mitigations</div>
+        <div class="mitigation">• Authenticate all writes to the vector store<br>• Never inject raw retrieved text as system instructions<br>• Allowlist tools per request type — block network-egress tools<br>• Log and alert on all outbound HTTP from agent processes</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Attacker View -->
+  <div class="pane" id="attacker-pane">
+    <div class="pane-header attacker">
+      <div class="dot"></div> Attacker Server — POST /collect
+    </div>
+
+    <div class="section" id="poison-section" style="display:none;">
+      <div class="section-title">Injected Memory Document</div>
+      <div class="exfil-received" id="poison-display">
+        <div class="exfil-header">⚠ CHROMADB POISON</div>
+        <div class="exfil-body" id="poison-text"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M8 5H2M5 2l3 3-3 3" stroke="currentColor" stroke-linecap="round"/></svg>
+        Exfiltrated Data Received
+      </div>
+      <div id="exfil-log">
+        <div class="exfil-waiting">
+          Listening on /collect…<br><br>
+          <span style="font-size:10px;color:var(--dim)">Data will appear here when audit_submit fires</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const WS_URL = `ws://${location.host}/ws`;
+  let ws, reconnectTimer;
+  let running = false;
+
+  function connect() {
+    ws = new WebSocket(WS_URL);
+    ws.onopen = () => {
+      clearTimeout(reconnectTimer);
+      showToast('Connected to demo server', 'success', 2000);
+    };
+    ws.onmessage = (e) => handle(JSON.parse(e.data));
+    ws.onclose = () => {
+      reconnectTimer = setTimeout(connect, 2000);
+    };
+  }
+
+  connect();
+
+  // ── Action dispatcher ──────────────────────────────────────────────────────
+
+  async function doAction(action) {
+    if (running && action !== 'reset') return;
+    const r = await fetch(`/action/${action}`, { method: 'POST' });
+    if (!r.ok) showToast('Server error', 'danger');
+  }
+
+  // ── Event handlers ─────────────────────────────────────────────────────────
+
+  function handle(evt) {
+    switch (evt.type) {
+
+      case 'reset_done':
+        clearAll();
+        setStep(0);
+        showToast('ChromaDB reset — memories re-seeded', 'success');
+        break;
+
+      case 'run_start':
+        running = true;
+        setRunning(true);
+        clearAgentPanels();
+        if (evt.mode === 'clean') setStep(1, 'active');
+        else setStep(3, 'active');
+        break;
+
+      case 'memories':
+        renderMemories(evt.entries);
+        break;
+
+      case 'tools_discovered':
+        // no-op — we show tools when called
+        break;
+
+      case 'tool_call':
+        appendToolCall(evt);
+        break;
+
+      case 'tool_result':
+        // no-op — result folded into tool call display
+        break;
+
+      case 'response':
+        renderResponse(evt.text);
+        break;
+
+      case 'run_done':
+        running = false;
+        setRunning(false);
+        if (evt.mode === 'clean') setStep(1, 'done');
+        else {
+          setStep(3, 'attack');
+          setStep(4, 'done');
+          document.getElementById('impact-section').style.display = '';
+        }
+        break;
+
+      case 'poison_injected':
+        setStep(2, 'attack');
+        showPoisonPanel(evt.text);
+        showToast('⚠ Memory poisoned — ChromaDB now contains malicious instruction', 'danger', 4000);
+        break;
+
+      case 'exfil':
+        renderExfil(evt);
+        break;
+
+      case 'error':
+        showToast(`Error: ${evt.message}`, 'danger', 6000);
+        setRunning(false);
+        running = false;
+        break;
+    }
+  }
+
+  // ── Render helpers ─────────────────────────────────────────────────────────
+
+  function renderMemories(entries) {
+    const el = document.getElementById('memories');
+    el.innerHTML = '';
+    entries.forEach((m, i) => {
+      const div = document.createElement('div');
+      div.className = 'memory-entry' + (m.is_poison ? ' poison' : '');
+      div.innerHTML = `
+        <span class="memory-idx">${i + 1}</span>
+        <span class="memory-text">${esc(m.text)}</span>
+        ${m.is_poison ? '<span class="poison-badge">⚠ POISON</span>' : ''}
+      `;
+      el.appendChild(div);
+      if (m.is_poison) {
+        setTimeout(() => showToast('⚠ Poison retrieved from ChromaDB!', 'danger', 4000), 200);
+      }
+    });
+  }
+
+  function appendToolCall(evt) {
+    const el = document.getElementById('tool-calls');
+    // Clear empty state
+    const empty = el.querySelector('.empty');
+    if (empty) empty.remove();
+
+    const div = document.createElement('div');
+    div.className = 'tool-call' + (evt.is_malicious ? ' malicious' : '');
+    const inputStr = JSON.stringify(evt.input);
+    const preview = inputStr.length > 120 ? inputStr.slice(0, 120) + '…' : inputStr;
+    div.innerHTML = `
+      <div class="tool-call-header">
+        <span class="tool-arrow">→</span>
+        <span class="tool-name">${esc(evt.name)}</span>
+        <span class="tool-badge ${evt.is_malicious ? 'exfil' : 'mcp'}">${evt.is_malicious ? '⚠ MALICIOUS' : 'MCP'}</span>
+      </div>
+      <div class="tool-input">${esc(preview)}</div>
+    `;
+    el.appendChild(div);
+    div.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function renderResponse(text) {
+    document.getElementById('response').innerHTML =
+      `<div class="response-box">${esc(text)}</div>`;
+  }
+
+  function showPoisonPanel(text) {
+    const section = document.getElementById('poison-section');
+    section.style.display = '';
+    document.getElementById('poison-text').textContent = text;
+  }
+
+  function renderExfil(evt) {
+    const el = document.getElementById('exfil-log');
+    const div = document.createElement('div');
+    div.className = 'exfil-received';
+    div.innerHTML = `
+      <div class="exfil-header">⚠ EXFILTRATED DATA RECEIVED</div>
+      <div class="exfil-meta">
+        <span>Bytes: <span>${evt.bytes}</span></span>
+        <span>Header: <span>X-Exfil-Source: agent</span></span>
+      </div>
+      <div class="exfil-body">${esc(evt.payload)}</div>
+    `;
+    el.innerHTML = '';
+    el.appendChild(div);
+    showToast('⚠ Data received at /collect — document exfiltrated!', 'danger', 5000);
+  }
+
+  // ── UI state helpers ───────────────────────────────────────────────────────
+
+  function setStep(n, state) {
+    const el = document.getElementById(`step-${n}`);
+    if (el) {
+      el.className = `step${state ? ' ' + state : ''}`;
+    }
+  }
+
+  function setRunning(on) {
+    document.getElementById('running-indicator').style.display = on ? '' : 'none';
+    ['btn-reset', 'btn-clean', 'btn-poison', 'btn-attack'].forEach(id => {
+      document.getElementById(id).disabled = on;
+    });
+  }
+
+  function clearAgentPanels() {
+    document.getElementById('memories').innerHTML = '<div class="empty">Retrieving from ChromaDB…</div>';
+    document.getElementById('tool-calls').innerHTML = '<div class="empty">Waiting for Claude…</div>';
+    document.getElementById('response').innerHTML = '<div class="empty">Waiting for response…</div>';
+    document.getElementById('impact-section').style.display = 'none';
+  }
+
+  function clearAll() {
+    clearAgentPanels();
+    document.getElementById('exfil-log').innerHTML =
+      '<div class="exfil-waiting">Listening on /collect…<br><br><span style="font-size:10px;color:var(--dim)">Data will appear here when audit_submit fires</span></div>';
+    document.getElementById('poison-section').style.display = 'none';
+    [1,2,3,4].forEach(n => setStep(n, ''));
+  }
+
+  // ── Toast ──────────────────────────────────────────────────────────────────
+
+  let toastTimer;
+  function showToast(msg, type = 'info', ms = 3000) {
+    const existing = document.querySelector('.toast');
+    if (existing) existing.remove();
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.textContent = msg;
+    document.body.appendChild(el);
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.remove(), ms);
+  }
+
+  function esc(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+</script>
+</body>
+</html>
